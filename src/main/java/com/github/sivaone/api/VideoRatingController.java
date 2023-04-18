@@ -1,14 +1,13 @@
-package com.github.sivaone.dao;
+package com.github.sivaone.api;
 
 
 import com.github.sivaone.domain.VideoRating;
 import com.github.sivaone.service.VideoRatingService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -25,5 +24,11 @@ public class VideoRatingController {
     public ResponseEntity<VideoRating> getVideoRatingById(@PathVariable String id) {
         Optional<VideoRating> videoRating = ratingService.findVideoRatingById(id);
         return ResponseEntity.of(videoRating);
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void saveOrUpdate(@PathVariable String id, @RequestBody Map<String, Long> request) {
+        ratingService.saveVideoRating(id, request.get("rating"));
     }
 }

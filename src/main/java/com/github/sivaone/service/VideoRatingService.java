@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.github.sivaone.domain.Video;
 import com.github.sivaone.domain.VideoRating;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.CassandraTemplate;
 import org.springframework.data.cassandra.core.query.Criteria;
@@ -20,14 +21,20 @@ import java.util.UUID;
 @Service
 public class VideoRatingService {
 
-    private final CqlSession cqlSession;
+//    private final CqlSession cqlSession;
 
-    public VideoRatingService(CqlSession cqlSession) {
-        this.cqlSession = cqlSession;
-    }
+//    public VideoRatingService(CqlSession cqlSession) {
+//        this.cqlSession = cqlSession;
+//    }
+
+    @Autowired
+    private CassandraOperations cassandraTemplate;
 
     public Optional<VideoRating> findVideoRatingById(String id) {
-        ResultSet rs = cqlSession.execute("SELECT * FROM video_rating where videoid = ?", UUID.fromString(id));
+        UUID videoUuid = UUID.fromString(id);
+
+        // Using CqlSession class for queries
+        /*ResultSet rs = cqlSession.execute("SELECT * FROM video_rating where videoid = ?", videoUuid);
         Row row = rs.one();
         if(Objects.nonNull(row)) {
             UUID videoid = row.get("videoid", UUID.class);
@@ -37,41 +44,30 @@ public class VideoRatingService {
             return Optional.of(new VideoRating(videoid, ratingCounter, ratingTotal));
         } else {
             return Optional.empty();
-        }
+        }*/
+
+        // Using CassandraTemplate for queries
+        VideoRating videoRating = cassandraTemplate.selectOne(
+                Query.query(Criteria.where("videoid").is(videoUuid)),
+                VideoRating.class);
+        return Objects.isNull(videoRating) ? Optional.empty() : Optional.of(videoRating);
     }
 
-    // TODO: Incomplete. Need to write api to call this
     public void saveVideoRating(String videoId, Long rating) {
-        CassandraOperations template = new CassandraTemplate(cqlSession);
+//        CassandraOperations cassandraTemplate = new CassandraTemplate(cqlSession);
         final UUID id = UUID.fromString(videoId);
-        Video video = template.selectOne(Query.query(Criteria.where("videoid").is(id)), Video.class);
+        Video video = cassandraTemplate.selectOne(Query.query(Criteria.where("videoid").is(id)), Video.class);
         if (Objects.isNull(video)) {
             throw new RuntimeException("Video not found");
         }
 
-        final VideoRating videoRating = template.selectOne(
+        // Note: Counter columns can only be incremented or decremented (cannot be set)
+        cassandraTemplate.update(
                 Query.query(Criteria.where("videoid").is(id)),
+                Update.empty()
+                        .increment("ratingCounter", 1)
+                        .increment("ratingTotal", rating),
                 VideoRating.class
         );
-        if (Objects.nonNull(videoRating)) {
-            final VideoRating update = new VideoRating(
-                    id,
-                    Math.addExact(videoRating.getRatingCounter(), 1L),
-                    Math.addExact(videoRating.getRatingTotal(), rating)
-            );
-            template.update(update);
-
-            // another way to update
-            /* template.update(
-                    Query.query(Criteria.where("videoid").is(id)),
-                    Update.empty()
-                            .increment("ratingCounter", 1)
-                            .increment("ratingTotal", rating),
-                    VideoRating.class
-            );*/
-        } else {
-            template.insert(new VideoRating(id, 1L, rating));
-        }
-
     }
 }
