@@ -1,0 +1,18 @@
+spring:
+  cassandra:
+    contact-points:
+      - localhost
+    local-datacenter: datacenter1
+    port: 9042
+    username: cassandra
+    password: cassandra
+    keyspace-name: killrvideo
+    schema-action: none
+server:
+  port: 8090
+logging:
+  level:
+    root: INFO
+    org.springframework.data.cassandra: DEBUG
+#    com.datastax.oss.driver: DEBUG
+#    org.springframework.data.cassandra.core.cql.CqlTemplate: DEBUG

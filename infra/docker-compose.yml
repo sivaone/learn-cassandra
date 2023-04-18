@@ -1,0 +1,13 @@
+version: "3.9"
+name: cassandra-infra
+services:
+  cassandra:
+    image: bitnami/cassandra:4.1.1
+    container_name: cassandra-1
+    volumes:
+      - C:\Users\Sivanagireddy_Alla\cassandra-persistence:/bitnami
+    ports:
+      - "9042:9042"
+      - "7000:7000"
+    environment:
+      - CASSANDRA_CLUSTER_NAME="Cassandra Cluster"
